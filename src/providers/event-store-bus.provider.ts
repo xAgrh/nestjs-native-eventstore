@@ -13,7 +13,7 @@ import { EVENTS_HANDLER_METADATA, SAGA_METADATA } from '@nestjs/cqrs/dist/decora
 import { Injectable, Logger, OnModuleDestroy, Type } from '@nestjs/common';
 import { Observable, Subscription } from 'rxjs';
 import { EventStoreBus } from './../event-store.bus';
-import { EventStoreBusConfig } from '../../src/types/event-store-bus-config.type';
+import { EventStoreBusConfig } from '../types/event-store-bus-config.type';
 import { EventStoreClient } from '../client';
 import { ModuleRef } from '@nestjs/core';
 import { filter } from 'rxjs/operators';
