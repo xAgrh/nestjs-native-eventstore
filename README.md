@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-<a href="https://www.npmjs.com/package/samdocknpmstore/nestjs-native-eventstore" target="_blank"><img src="https://img.shields.io/npm/v/samdocknpmstore/nestjs-native-eventstore?style=flat-square" alt="NPM Version"/></a>
+<a href="https://www.npmjs.com/package/nestjs-native-eventstore" target="_blank"><img src="https://img.shields.io/npm/v/nestjs-native-eventstore?style=flat-square" alt="NPM Version"/></a>
 
-<a href="https://img.shields.io/npm/l/samdocknpmstore/nestjs-native-eventstore?style=flat-square" target="_blank"><img src="https://img.shields.io/npm/l/samdocknpmstore/nestjs-native-eventstore?style=flat-square" alt="License"/></a>
+<a href="https://img.shields.io/npm/l/nestjs-native-eventstore?style=flat-square" target="_blank"><img src="https://img.shields.io/npm/l/nestjs-native-eventstore?style=flat-square" alt="License"/></a>
 
 <a href="https://img.shields.io/github/languages/code-size/xagrh/nestjs-native-eventstore?style=flat-square" target="_blank"><img src="https://img.shields.io/github/languages/code-size/xagrh/nestjs-native-eventstore?style=flat-square" alt="Code Size"/></a>
 <a href="https://img.shields.io/github/languages/top/xagrh/nestjs-native-eventstore?style=flat-square" target="_blank"><img src="https://img.shields.io/github/languages/top/xagrh/nestjs-native-eventstore?style=flat-square" alt="Top Language"/></a>
