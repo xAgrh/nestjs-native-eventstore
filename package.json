@@ -1,0 +1,91 @@
+{
+  "name": "nestjs-native-eventstore",
+  "version": "1.0.0",
+  "description": "Event Store connector for Nest js",
+  "author": "Zhorov Dmitry <obsnrd@gmail.com>",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*",
+    "*.md"
+  ],
+  "scripts": {
+    "start:dev": "tsc -w",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint -c .eslintrc.js --ext .ts ./src",
+    "lint:fix": "eslint -c .eslintrc.js --ext .ts ./src --fix",
+    "check-lite": "npm i && npm-check -u && npm run lint:fix && npm run lint && npm run test && npm run build && npm run start:dev",
+    "test": "jest --verbose",
+    "test:watch": "jest --watchAll",
+    "test:watch:verbose": "jest  --verbose --watchAll",
+    "test:cov": "jest --coverage",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --watchAll",
+    "check": "npm cache clean --force && npm rebuild && rm -rf node_modules/ && npm install && npm run check-lite"
+  },
+  "keywords": [
+    "nestjs",
+    "eventstore",
+    "native",
+    "GRCP",
+    "connector"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xagrh/nestjs-native-eventstore"
+  },
+  "bugs": "https://github.com/xagrh/nestjs-native-eventstore/issues",
+  "peerDependencies": {
+    "rxjs": "^6.3.3"
+  },
+  "dependencies": {
+    "@nestjs/common": "^9.2.1",
+    "@nestjs/core": "^9.2.1",
+    "@nestjs/cqrs": "^9.0.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.0",
+    "@eventstore/db-client": "^5.0.0",
+    "nanoid": "^3.3.4"
+  },
+  "devDependencies": {
+    "@nestjs/platform-express": "^9.2.1",
+    "@nestjs/testing": "^9.2.1",
+    "@types/express": "^4.17.14",
+    "@types/jest": "^29.2.4",
+    "@types/node": "^18.7.18",
+    "@types/supertest": "^2.0.12",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^5.47.0",
+    "@typescript-eslint/parser": "^5.47.0",
+    "copyfiles": "^2.4.1",
+    "eslint": "^8.30.0",
+    "jest": "^29.3.1",
+    "prettier": "^2.8.1",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.0.3",
+    "ts-node": "^10.9.1",
+    "tsc-watch": "^6.0.0",
+    "tsconfig-paths": "^4.1.1",
+    "typescript": "^4.8.4"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}

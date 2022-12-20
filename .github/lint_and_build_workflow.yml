@@ -1,0 +1,36 @@
+name: lint & build
+# This workflow is triggered on pushes to the repository.
+on:
+  push:
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '16.x'
+    - run: npm install
+    - run: npm run lint
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '16.x'
+    - run: npm install
+    - run: npm run test
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '16.x'
+    - run: npm install
+    - run: npm run build
