@@ -95,7 +95,7 @@ export class EventStoreBus implements OnModuleDestroy {
     await Promise.all(
       subscriptions.map(async (subscription) => {
         try {
-          return this.client.createPersistentSubscription(
+          return this.client.createPersistentSubscriptionToStream(
             subscription.stream,
             subscription.persistentSubscriptionName,
             settings,
