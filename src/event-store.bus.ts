@@ -9,7 +9,7 @@ import {
 } from './types';
 import { EventStoreBusConfig, IEventConstructors } from '.';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
-import { PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent } from '@eventstore/db-client';
+import { PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, START } from '@eventstore/db-client';
 
 import { EventStoreClient } from './client';
 import { EventStoreSubscriptionType } from './event-store.constants';
@@ -72,6 +72,8 @@ export class EventStoreBus implements OnModuleDestroy {
     subscriptions: EsPersistentSubscription[],
   ): Promise<ExtendedPersistentSubscription[]> {
     const settings: PersistentSubscriptionToStreamSettings = persistentSubscriptionToStreamSettingsFromDefaults({
+      startFrom: START,
+      messageTimeout: 1000,
       resolveLinkTos: true,
     });
 

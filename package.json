@@ -1,6 +1,6 @@
 {
   "name": "nestjs-native-eventstore",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Event Store connector for Nest js",
   "author": "Zhorov Dmitry <obsnrd@gmail.com>",
   "license": "MIT",
