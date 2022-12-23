@@ -119,7 +119,7 @@ export class SomeCommandHandler
 ```
 
 ## Notice
- `2.0.0` release inspired by [nestjs-eventstore](https://github.com/daypaio/nestjs-eventstore)
+release inspired by [nestjs-eventstore](https://github.com/daypaio/nestjs-eventstore)
 
 ## License
 

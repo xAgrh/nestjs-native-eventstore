@@ -82,7 +82,7 @@ export class EventStoreBus implements OnModuleDestroy {
         );
 
         return this.client
-          .createPersistentSubscription(sub.stream, sub.persistentSubscriptionName, settings)
+          .createPersistentSubscriptionToStream(sub.stream, sub.persistentSubscriptionName, settings)
           .then(() => {
             this.logger.verbose(`Created persistent subscription - ${sub.persistentSubscriptionName}:${sub.stream}`);
             return {
