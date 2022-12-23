@@ -9,7 +9,7 @@ import {
 } from './types';
 import { EventStoreBusConfig, IEventConstructors } from '.';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
-import { PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent } from '@eventstore/db-client';
+import { FORWARDS, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, StreamNotFoundError } from '@eventstore/db-client';
 
 import { EventStoreClient } from './client';
 import { EventStoreSubscriptionType } from './event-store.constants';
@@ -95,11 +95,26 @@ export class EventStoreBus implements OnModuleDestroy {
     await Promise.all(
       subscriptions.map(async (subscription) => {
         try {
-          return this.client.createPersistentSubscriptionToStream(
-            subscription.stream,
-            subscription.persistentSubscriptionName,
-            settings,
-          );
+          const events = this.client.readStream(subscription.stream, {
+            direction: FORWARDS,
+            fromRevision: BigInt(10),
+            maxCount: 20,
+          });
+          
+          try {
+            for await (const resolvedEvent of events) {
+              this.logger.log('stream detected currently with data:', resolvedEvent.event?.data);
+            }
+          } catch (error) {
+            if (error instanceof StreamNotFoundError) {
+              return this.client.createPersistentSubscriptionToStream(
+                subscription.stream,
+                subscription.persistentSubscriptionName,
+                settings,
+              );
+            }
+            throw error;
+          }
         } catch (error) {
           this.logger.error(error);
         }
