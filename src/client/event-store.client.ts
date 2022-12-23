@@ -2,11 +2,15 @@ import {
   AppendResult,
   END,
   EventStoreDBClient,
+  EventType,
   jsonEvent,
   PersistentSubscriptionToStream,
   PersistentSubscriptionToStreamSettings,
   ReadRevision,
+  ReadStreamOptions,
+  ResolvedEvent,
   START,
+  StreamingRead,
   StreamSubscription,
 } from '@eventstore/db-client';
 import { GossipClusterOptions, SingleNodeOptions } from '@eventstore/db-client/dist/Client';
@@ -127,5 +131,9 @@ export class EventStoreClient {
       fromRevision: END,
       resolveLinkTos: true,
     });
+  }
+
+  async readStream(streamName, options?: ReadStreamOptions, readableOptions?): Promise<StreamingRead<ResolvedEvent<EventType>>> {
+    return this.client.readStream(streamName, options, readableOptions);
   }
 }

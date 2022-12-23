@@ -95,7 +95,7 @@ export class EventStoreBus implements OnModuleDestroy {
     await Promise.all(
       subscriptions.map(async (subscription) => {
         try {
-          const events = this.client.readStream(subscription.stream, {
+          const events = await this.client.readStream(subscription.stream, {
             direction: FORWARDS,
             fromRevision: BigInt(10),
             maxCount: 20,
