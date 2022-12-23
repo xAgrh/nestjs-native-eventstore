@@ -100,7 +100,7 @@ export class EventStoreClient {
     return this.client.appendToStream(streamName, [...jsonEvents]);
   }
 
-  async createPersistentSubscription(
+  async createPersistentSubscriptionToStream(
     streamName: string,
     persistentSubscriptionName: string,
     settings: PersistentSubscriptionToStreamSettings,
