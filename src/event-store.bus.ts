@@ -9,7 +9,7 @@ import {
 } from './types';
 import { EventStoreBusConfig, IEventConstructors } from '.';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
-import { FORWARDS, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, StreamNotFoundError } from '@eventstore/db-client';
+import { PARK, PersistentSubscriptionToStream, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, StreamNotFoundError } from '@eventstore/db-client';
 
 import { EventStoreClient } from './client';
 import { EventStoreSubscriptionType } from './event-store.constants';
@@ -23,7 +23,7 @@ export class EventStoreBus implements OnModuleDestroy {
   private catchupSubscriptions: ExtendedCatchUpSubscription[] = [];
   private catchupSubscriptionCount = 0;
 
-  private persistentSubscriptions: ExtendedPersistentSubscription[] = [];
+  private persistentSubscriptions: any[] = [];
   private persistentSubscriptionsCount = 0;
 
   constructor(
@@ -53,72 +53,74 @@ export class EventStoreBus implements OnModuleDestroy {
   ) {
     this.persistentSubscriptionsCount = subscriptions.length;
 
-    await this.createMissingPersistentSubscriptions(subscriptions);
+    subscriptions.forEach(async (sub: EsPersistentSubscription) => {
+      this.logger.log(sub)
 
-    this.persistentSubscriptions = await Promise.all(
-      subscriptions.map(async (subscription) => {
-        return await this.subscribeToPersistentSubscription(
-          subscription.stream,
-          subscription.persistentSubscriptionName,
+      // So 2 different variants can be returned
+      // 1. {isLive: false, isCreated: true,}
+      // 2. {isLive: false, isCreated: false,}
+      const updatedSub: ExtendedPersistentSubscription = await this.createMissingPersistentSubscription(sub);
+
+      // Now idea is to setup connection only for isCreated
+
+      if (updatedSub?.isCreated) {
+        await this.subscribeToPersistentSubscription(
+          updatedSub.stream,
+          updatedSub.subscription,
         );
-      }),
-    );
+      } else {
+        this.logger.warn(`Persistent subscription was not created: ${updatedSub.stream} ${updatedSub.subscription}`);
+        // Probably in this case we will need to resetup connection to the eventstore
+      }
+    });
   }
 
-  async createMissingPersistentSubscriptions(
-    subscriptions: EsPersistentSubscription[],
-  ): Promise<ExtendedPersistentSubscription[]> {
+  async createMissingPersistentSubscription(
+    sub: EsPersistentSubscription,
+  ): Promise<ExtendedPersistentSubscription> {
     const settings: PersistentSubscriptionToStreamSettings = persistentSubscriptionToStreamSettingsFromDefaults({
       resolveLinkTos: true,
     });
 
-    try {
-      const subs = subscriptions.map(async (sub) => {
-        this.logger.verbose(
-          `Starting to verify and create persistent subscription - [${sub.stream}][${sub.persistentSubscriptionName}]`,
-        );
+    this.logger.verbose(
+      `Starting to verify and create persistent subscription - ${JSON.stringify(sub)}`,
+    );
 
-        return this.client
-          .createPersistentSubscriptionToStream(sub.stream, sub.persistentSubscriptionName, settings)
-          .then(() => {
-            this.logger.verbose(`Created persistent subscription - ${sub.persistentSubscriptionName}:${sub.stream}`);
-            return {
-              isLive: false,
-              isCreated: true,
-              stream: sub.stream,
-              subscription: sub.persistentSubscriptionName,
-            } as ExtendedPersistentSubscription;
-          })
-          .catch((reason) => {
-            if (reason.type === ErrorType.PERSISTENT_SUBSCRIPTION_EXISTS) {
-              this.logger.verbose(
-                `Persistent Subscription - ${sub.persistentSubscriptionName}:${sub.stream} already exists. Skipping creation.`,
-              );
+    const subscription = await this.client
+      .createPersistentSubscriptionToStream(sub.stream, sub.persistentSubscriptionName, settings)
+      .then(() => {
+        this.logger.log(`Created persistent subscription - ${sub.persistentSubscriptionName}:${sub.stream}`);
+        return ({
+          isLive: false,
+          isCreated: true,
+          stream: sub.stream,
+          subscription: sub.persistentSubscriptionName,
+        } as ExtendedPersistentSubscription)
+      })
+      .catch((reason) => {
+        if (reason.type === ErrorType.PERSISTENT_SUBSCRIPTION_EXISTS) {
+          this.logger.log(
+            `Persistent Subscription - ${sub.persistentSubscriptionName}:${sub.stream} already exists. Skipping creation.`,
+          );
+          return ({
+            isLive: false,
+            isCreated: true,
+            stream: sub.stream,
+            subscription: sub.persistentSubscriptionName,
+          } as ExtendedPersistentSubscription)
+        } else {
+          this.logger.error(`[${sub.stream}][${sub.persistentSubscriptionName}] can't be created \n Due: ${reason.message} ${reason.stack}`);
 
-              return {
-                isLive: false,
-                isCreated: true,
-                stream: sub.stream,
-                subscription: sub.persistentSubscriptionName,
-              } as ExtendedPersistentSubscription;
-            } else {
-              this.logger.error(`[${sub.stream}][${sub.persistentSubscriptionName}] ${reason.message} ${reason.stack}`);
-
-              return {
-                isLive: false,
-                isCreated: false,
-                stream: sub.stream,
-                subscription: sub.persistentSubscriptionName,
-              } as ExtendedPersistentSubscription;
-            }
-          });
+          return ({
+            isLive: false,
+            isCreated: false,
+            stream: sub.stream,
+            subscription: sub.persistentSubscriptionName,
+          } as ExtendedPersistentSubscription)
+        }
       });
 
-      return await Promise.all(subs);
-    } catch (e) {
-      this.logger.error(e);
-      return [];
-    }
+    return subscription;
   }
 
   async subscribeToCatchUpSubscriptions(subscriptions: EsCatchUpSubscription[]) {
@@ -164,7 +166,6 @@ export class EventStoreBus implements OnModuleDestroy {
         stream,
       });
 
-      // this.client.appendToStream(stream, event);
       this.client.writeEventToStream(stream || '$svc-catch-all', event.constructor.name, event);
     } catch (e) {
       this.logger.error(e);
@@ -221,18 +222,18 @@ export class EventStoreBus implements OnModuleDestroy {
   async subscribeToPersistentSubscription(
     stream: string,
     subscriptionName: string,
-  ): Promise<ExtendedPersistentSubscription> {
+  ): Promise<PersistentSubscriptionToStream> {
     try {
-      const resolved = (await this.client.subscribeToPersistentSubscription(
-        stream,
-        subscriptionName,
-      )) as ExtendedPersistentSubscription;
+      this.logger.log(`[${stream}][${subscriptionName}] Subscribing...`)
 
+      const resolved = (await this.client.subscribeToPersistentSubscriptionToStream(stream, subscriptionName)) as PersistentSubscriptionToStream;
       resolved
         .on('data', (ev: ResolvedEvent) => {
+          this.logger.log(`[${stream}][${subscriptionName}] Data received`)
           try {
             this.onEvent(ev);
             resolved.ack(ev);
+            this.logger.log(`[${stream}][${subscriptionName}] Data added to eventstore successfully`);
             // resolved.ack(ev.event?.id || '');
           } catch (err) {
             this.logger.error({
@@ -242,31 +243,60 @@ export class EventStoreBus implements OnModuleDestroy {
               stream,
               subscriptionName,
             });
-            resolved.nack('retry', err, ev);
+
+            resolved.nack(PARK, err.toString(), ev);
+            // resolved.nack('retry', err, ev);
             // resolved.nack('retry', err, ev.event?.id || '');
           }
         })
-        .on('confirmation', () =>
-          this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription confirmation`),
-        )
+        .on('confirmation', () => {
+          const sub = ({
+            isLive: true,
+            isCreated: true,
+            stream: stream,
+            subscription: subscriptionName,
+          } as ExtendedPersistentSubscription)
+          this.persistentSubscriptions.push(sub)
+
+          this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription confirmation`);
+          this.logger.verbose(`Connection to persistent subscription ${subscriptionName} on stream ${stream} established.`);
+        })
         .on('close', () => {
           this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription closed`);
-          this.onDropped(resolved);
+
+          const index = this.persistentSubscriptions.findIndex((sub: ExtendedPersistentSubscription) => {
+            return sub.stream === stream && sub.subscription === subscriptionName;
+          })
+
+          if (index > -1) { // only splice array when item is found
+            this.persistentSubscriptions.splice(index, 1);
+          }
+
+          this.logger.log(`[${index}] index`);
+          
           this.reSubscribeToPersistentSubscription(stream, subscriptionName);
         })
         .on('error', (err: Error) => {
-          this.logger.error({ stream, subscriptionName, error: err, msg: `Persistent subscription error` });
-          this.onDropped(resolved);
+          this.logger.error(`[${stream}][${subscriptionName}] Persistent subscription error`, err);
+
+          const index = this.persistentSubscriptions.findIndex((sub: ExtendedPersistentSubscription) => {
+            return sub.stream === stream && sub.subscription === subscriptionName;
+          })
+
+          if (index > -1) { // only splice array when item is found
+            this.persistentSubscriptions.splice(index, 1);
+          }
+
+          this.logger.log(`[${index}] index`);
+
           this.reSubscribeToPersistentSubscription(stream, subscriptionName);
         });
 
-      this.logger.verbose(`Connection to persistent subscription ${subscriptionName} on stream ${stream} established.`);
-      resolved.isLive = true;
-
       return resolved;
     } catch (e) {
+      this.logger.error(`Persistent subscription top error`);
       this.logger.error(`[${stream}][${subscriptionName}] ${e.message} ${e.stack}`);
-      throw new Error(e);
+      // throw new Error(e);
     }
   }
 
@@ -302,13 +332,17 @@ export class EventStoreBus implements OnModuleDestroy {
     }
   }
 
+  onLive(sub: ExtendedCatchUpSubscription | ExtendedPersistentSubscription) {
+    sub.isLive = true;
+  }
+
   onDropped(sub: ExtendedCatchUpSubscription | ExtendedPersistentSubscription) {
     sub.isLive = false;
   }
 
   reSubscribeToPersistentSubscription(stream: string, subscriptionName: string) {
     this.logger.warn(`Reconnecting to subscription ${subscriptionName} ${stream}...`);
-    setTimeout((st, subName) => this.subscribeToPersistentSubscription(st, subName), 3000, stream, subscriptionName);
+    setTimeout((st, subName) => this.subscribeToPersistentSubscription(st, subName), 10000, stream, subscriptionName);
   }
 
   addEventHandlers(eventHandlers: IEventConstructors) {

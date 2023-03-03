@@ -12,7 +12,7 @@ import {
 import { EVENTS_HANDLER_METADATA, SAGA_METADATA } from '@nestjs/cqrs/dist/decorators/constants';
 import { Injectable, Logger, OnModuleDestroy, Type } from '@nestjs/common';
 import { Observable, Subscription } from 'rxjs';
-import { EventStoreBus } from './../event-store.bus';
+import { EventStoreBus } from '../event-store.bus';
 import { EventStoreBusConfig } from '../types/event-store-bus-config.type';
 import { EventStoreClient } from '../client';
 import { ModuleRef } from '@nestjs/core';
@@ -107,7 +107,7 @@ export class EventStoreBusProvider extends ObservableBus<IEvent> implements OnMo
 
     const stream$ = saga(this);
 
-    this.logger.log(stream$ instanceof Observable);
+    // this.logger.log('Is stream$ instance of observable: ', stream$ instanceof Observable);
 
     // if (!(stream$ instanceof Observable)) {
     //   throw new InvalidSagaException();

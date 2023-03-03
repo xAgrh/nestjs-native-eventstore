@@ -22,10 +22,10 @@ export class EventStorePublisher<EventBase extends IEvent = IEvent> {
 
   mergeObjectContext<T extends AggregateRoot>(object: T): T {
     const eventBus = this.eventStoreBusProvider;
-    object.publish = (event: IEvent) => eventBus.publish(event, (event as IAggregateEvent).streamName);
-
     // fckinfckinfck https://github.com/nestjs/cqrs/pull/335
-    object.publishAll = (event: IEvent[]) => (event || []).forEach((ev) => eventBus.publish(ev, (ev as IAggregateEvent).streamName));
+    object.publishAll = (event: any[]) => (event || []).forEach((ev) => {
+      return eventBus.publish(ev, (ev as IAggregateEvent).streamName)
+    });
     
     return object;
   }

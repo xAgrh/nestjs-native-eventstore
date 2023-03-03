@@ -75,6 +75,7 @@ export class EventStoreClient {
         throw Error('Connection information not provided.');
       }
     } catch (e) {
+      console.log('Cant connect eventstore client')
       this.logger.error(e);
       throw e;
     }
@@ -82,13 +83,17 @@ export class EventStoreClient {
 
   async writeEventToStream(streamName: string, eventType: string, payload: any, metadata?: any): Promise<AppendResult> {
     const event = jsonEvent({
-      id: v4(),
+      id: nanoid(),
       type: eventType,
       data: payload,
       metadata,
     });
 
-    return this.client.appendToStream(streamName, event);
+    try {
+      return await this.client.appendToStream(streamName, event);
+    } catch (e) {
+      this.logger.error('Something went wrong when we try to append event to stream', e)
+    }
   }
 
   async writeEventsToStream(streamName: string, events: EventStoreEvent[]): Promise<AppendResult> {
@@ -101,7 +106,11 @@ export class EventStoreClient {
       });
     });
 
-    return this.client.appendToStream(streamName, [...jsonEvents]);
+    try {
+      return await this.client.appendToStream(streamName, [...jsonEvents]);
+    } catch (e) {
+      this.logger.error('Something went wrong when we try to append events to stream', e)
+    }
   }
 
   async createPersistentSubscriptionToStream(
@@ -109,14 +118,22 @@ export class EventStoreClient {
     persistentSubscriptionName: string,
     settings: PersistentSubscriptionToStreamSettings,
   ): Promise<void> {
-    return this.client.createPersistentSubscriptionToStream(streamName, persistentSubscriptionName, settings);
+    try {
+      return this.client.createPersistentSubscriptionToStream(streamName, persistentSubscriptionName, settings);
+    } catch(e) {
+      console.log(e)
+    }
   }
 
-  async subscribeToPersistentSubscription(
+  async subscribeToPersistentSubscriptionToStream(
     streamName: string,
     persistentSubscriptionName: string,
   ): Promise<PersistentSubscriptionToStream> {
-    return this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
+    try {
+      return this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
+    } catch(e) {
+      console.log(e)
+    }
   }
 
   async subscribeToCatchupSubscription(streamName: string, fromRevision?: ReadRevision): Promise<StreamSubscription> {
@@ -135,5 +152,9 @@ export class EventStoreClient {
 
   async readStream(streamName, options?: ReadStreamOptions, readableOptions?): Promise<StreamingRead<ResolvedEvent<EventType>>> {
     return this.client.readStream(streamName, options, readableOptions);
+  }
+
+  async deleteStream(streamName, group) {
+    return await this.client.deletePersistentSubscriptionToStream(streamName, group);
   }
 }
