@@ -166,7 +166,7 @@ export class EventStoreBus implements OnModuleDestroy {
         stream,
       });
 
-      this.client.writeEventToStream(stream || '$svc-catch-all', event.constructor.name, event);
+      this.client.writeEventToStream(stream || '$svc-catch-all', event?.constructor?.name, event);
     } catch (e) {
       this.logger.error(e);
       throw new Error(e);

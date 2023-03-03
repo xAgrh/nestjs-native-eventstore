@@ -83,9 +83,8 @@ export class EventStoreClient {
 
   async writeEventToStream(streamName: string, eventType: string, payload: any, metadata?: any): Promise<AppendResult> {
     const event = jsonEvent({
-      id: nanoid(),
       type: eventType,
-      data: payload,
+      data: JSON.parse(JSON.stringify(payload)),
       metadata,
     });
 
@@ -99,7 +98,6 @@ export class EventStoreClient {
   async writeEventsToStream(streamName: string, events: EventStoreEvent[]): Promise<AppendResult> {
     const jsonEvents = events.map((e) => {
       return jsonEvent({
-        id: nanoid(),
         type: e.eventType,
         data: e.payload,
         metadata: e.metadata,
