@@ -1,6 +1,6 @@
 {
   "name": "nestjs-native-eventstore",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Event Store connector for Nest js",
   "author": "Zhorov Dmitry <obsnrd@gmail.com>",
   "license": "MIT",
@@ -50,7 +50,7 @@
     "@nestjs/cqrs": "^9.0.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
-    "@eventstore/db-client": "^5.0.0",
+    "@eventstore/db-client": "^5.0.1",
     "nanoid": "^3.3.4"
   },
   "devDependencies": {

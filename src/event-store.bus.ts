@@ -9,7 +9,7 @@ import {
 } from './types';
 import { EventStoreBusConfig, IEventConstructors } from '.';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
-import { PARK, PersistentSubscriptionToStream, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, StreamNotFoundError } from '@eventstore/db-client';
+import { PARK, PersistentSubscriptionToStream, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, RETRY, StreamNotFoundError } from '@eventstore/db-client';
 
 import { EventStoreClient } from './client';
 import { EventStoreSubscriptionType } from './event-store.constants';
@@ -227,6 +227,7 @@ export class EventStoreBus implements OnModuleDestroy {
       this.logger.log(`[${stream}][${subscriptionName}] Subscribing...`)
 
       const resolved = (await this.client.subscribeToPersistentSubscriptionToStream(stream, subscriptionName)) as PersistentSubscriptionToStream;
+      this.logger.log('Resolved subscription', resolved)
       resolved
         .on('data', (ev: ResolvedEvent) => {
           this.logger.log(`[${stream}][${subscriptionName}] Data received`)
@@ -244,7 +245,7 @@ export class EventStoreBus implements OnModuleDestroy {
               subscriptionName,
             });
 
-            resolved.nack(PARK, err.toString(), ev);
+            resolved.nack(PARK, err?.toString(), ev);
             // resolved.nack('retry', err, ev);
             // resolved.nack('retry', err, ev.event?.id || '');
           }
@@ -260,6 +261,24 @@ export class EventStoreBus implements OnModuleDestroy {
 
           this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription confirmation`);
           this.logger.verbose(`Connection to persistent subscription ${subscriptionName} on stream ${stream} established.`);
+        })
+        // .on('readable', (data) => {
+        //   this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription readable event`);
+        // })
+        .on('end', () => {
+          this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription ended`);
+
+          const index = this.persistentSubscriptions.findIndex((sub: ExtendedPersistentSubscription) => {
+            return sub.stream === stream && sub.subscription === subscriptionName;
+          })
+
+          if (index > -1) { // only splice array when item is found
+            this.persistentSubscriptions.splice(index, 1);
+          }
+
+          this.logger.log(`[${index}] index`);
+          
+          this.reSubscribeToPersistentSubscription(stream, subscriptionName);
         })
         .on('close', () => {
           this.logger.log(`[${stream}][${subscriptionName}] Persistent subscription closed`);
@@ -353,8 +372,10 @@ export class EventStoreBus implements OnModuleDestroy {
   }
 
   onModuleDestroy() {
+    this.logger.log('EventStoreBusModule destroyed')
     this.persistentSubscriptions?.forEach((sub) => {
       if (sub?.isLive) {
+        this.logger.log(`[${sub.stream}][${sub.subscription}] Unsubscribed`)
         sub.unsubscribe();
       }
     });

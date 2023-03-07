@@ -15,7 +15,6 @@ import {
 } from '@eventstore/db-client';
 import { GossipClusterOptions, SingleNodeOptions } from '@eventstore/db-client/dist/Client';
 import { Logger } from '@nestjs/common';
-import { nanoid } from 'nanoid';
 import { v4 } from 'uuid';
 import {
   DnsClusterOptions,
@@ -84,8 +83,7 @@ export class EventStoreClient {
   async writeEventToStream(streamName: string, eventType: string, payload: any, metadata?: any): Promise<AppendResult> {
     const event = jsonEvent({
       type: eventType,
-      data: JSON.parse(JSON.stringify(payload)),
-      metadata,
+      data: payload,
     });
 
     try {
@@ -100,7 +98,6 @@ export class EventStoreClient {
       return jsonEvent({
         type: e.eventType,
         data: e.payload,
-        metadata: e.metadata,
       });
     });
 
@@ -119,7 +116,7 @@ export class EventStoreClient {
     try {
       return this.client.createPersistentSubscriptionToStream(streamName, persistentSubscriptionName, settings);
     } catch(e) {
-      console.log(e)
+      this.logger.error('Cant be created', e)
     }
   }
 
@@ -130,7 +127,7 @@ export class EventStoreClient {
     try {
       return this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
     } catch(e) {
-      console.log(e)
+      this.logger.error('Cant be subscribed', e)
     }
   }
 
