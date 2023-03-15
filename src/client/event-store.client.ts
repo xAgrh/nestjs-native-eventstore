@@ -75,7 +75,7 @@ export class EventStoreClient {
       }
     } catch (e) {
       console.log('Cant connect eventstore client')
-      this.logger.error(e);
+      this.logger.error('Cant connect eventstore client', e);
       throw e;
     }
   }
@@ -90,6 +90,7 @@ export class EventStoreClient {
       return await this.client.appendToStream(streamName, event);
     } catch (e) {
       this.logger.error('Something went wrong when we try to append event to stream', e)
+      throw e;
     }
   }
 
@@ -125,7 +126,8 @@ export class EventStoreClient {
     persistentSubscriptionName: string,
   ): Promise<PersistentSubscriptionToStream> {
     try {
-      return this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
+      const subscription = await this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
+      return subscription;
     } catch(e) {
       this.logger.error('Cant be subscribed', e)
     }

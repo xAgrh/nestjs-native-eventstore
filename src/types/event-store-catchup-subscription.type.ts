@@ -7,5 +7,8 @@ export type EventStoreCatchupSubscription = {
 };
 
 export interface ExtendedCatchUpSubscription extends StreamSubscription {
-  isLive?: boolean;
+  type: EventStoreSubscriptionType.CatchUp;
+  stream: string;
+  isCreated: boolean | undefined;
+  isLive: boolean | undefined;
 }

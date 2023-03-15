@@ -1,5 +1,5 @@
 import { EventStoreSubscriptionType } from '../event-store.constants';
-import { PersistentSubscriptionToStream } from '@eventstore/db-client';
+import { PersistentSubscriptionToStream, StreamSubscription } from '@eventstore/db-client';
 
 export type EventStorePersistentSubscription = {
   type: EventStoreSubscriptionType.Persistent;
@@ -7,9 +7,11 @@ export type EventStorePersistentSubscription = {
   persistentSubscriptionName: string;
 };
 
-export interface ExtendedPersistentSubscription {
-  isLive?: boolean;
-  isCreated?: boolean;
+export interface ExtendedPersistentSubscription extends PersistentSubscriptionToStream {
+  type: EventStoreSubscriptionType.Persistent;
   stream: string;
-  subscription: string;
+  persistentSubscriptionName: string;
+  subscription?: PersistentSubscriptionToStream;
+  isCreated: boolean | undefined;
+  isLive: boolean | undefined;
 }
