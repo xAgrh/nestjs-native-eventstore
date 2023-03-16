@@ -9,7 +9,7 @@ import {
 } from './types';
 import { EventStoreBusConfig, IEventConstructors } from '.';
 import { Logger, OnModuleDestroy } from '@nestjs/common';
-import { PARK, PersistentSubscriptionToStream, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, RETRY, StreamNotFoundError, StreamSubscription } from '@eventstore/db-client';
+import { EventType, PARK, PersistentSubscriptionBase, PersistentSubscriptionToStream, PersistentSubscriptionToStreamSettings, persistentSubscriptionToStreamSettingsFromDefaults, ResolvedEvent, RETRY, StreamNotFoundError, StreamSubscription } from '@eventstore/db-client';
 
 import { EventStoreClient } from './client';
 import { EventStoreSubscriptionType } from './event-store.constants';
@@ -53,9 +53,20 @@ export class EventStoreBus implements OnModuleDestroy {
   ): Promise<void> {
 
     const intervalID = setInterval(()=> {
-      console.log('check', this.persistentSubscriptions)
       this.persistentSubscriptions?.forEach((sub) => {
+        console.log(`[${sub.stream} ${sub.persistentSubscriptionName}] readable`, (sub.subscription as any)?.readable);
+        console.log(`[${sub.stream} ${sub.persistentSubscriptionName}] writable`, (sub.subscription as any)?.writable);
+        console.log(`[${sub.stream} ${sub.persistentSubscriptionName}] isLive`, sub?.isLive);
+        if (!(sub.subscription as any)?.readable) {
+          sub.subscription?.unsubscribe();
+          this.reSubscribeToPersistentSubscription(sub.stream, sub.persistentSubscriptionName);
+        }
+        if (!(sub.subscription as any)?.writable) {
+          sub.subscription?.unsubscribe();
+          this.reSubscribeToPersistentSubscription(sub.stream, sub.persistentSubscriptionName);
+        }
         if (!sub.isLive) {
+          sub.subscription?.unsubscribe();
           this.reSubscribeToPersistentSubscription(sub.stream, sub.persistentSubscriptionName);
         }
       })
@@ -74,7 +85,7 @@ export class EventStoreBus implements OnModuleDestroy {
       // Now idea is to setup connection only for isCreated
 
       if (updatedSub?.isCreated) {
-        const subscription: PersistentSubscriptionToStream = await this.subscribeToPersistentSubscription(
+        const subscription: PersistentSubscriptionBase<any> = this.subscribeToPersistentSubscription(
           updatedSub.stream,
           updatedSub.persistentSubscriptionName,
         );
@@ -145,12 +156,12 @@ export class EventStoreBus implements OnModuleDestroy {
   }
 
 
-  async subscribeToPersistentSubscription(
+  subscribeToPersistentSubscription(
     stream: string,
     subscriptionName: string,
-  ): Promise<PersistentSubscriptionToStream> {
+  ): PersistentSubscriptionToStream<EventType> {
     try {
-      const resolved = await this.client.subscribeToPersistentSubscriptionToStream(stream, subscriptionName) as PersistentSubscriptionToStream;
+      const resolved = this.client.subscribeToPersistentSubscriptionToStream(stream, subscriptionName);
       
       return resolved;
     } catch (err) {

@@ -121,12 +121,12 @@ export class EventStoreClient {
     }
   }
 
-  async subscribeToPersistentSubscriptionToStream(
+  subscribeToPersistentSubscriptionToStream(
     streamName: string,
     persistentSubscriptionName: string,
-  ): Promise<PersistentSubscriptionToStream> {
+  ): PersistentSubscriptionToStream {
     try {
-      const subscription = await this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
+      const subscription = this.client.subscribeToPersistentSubscriptionToStream(streamName, persistentSubscriptionName);
       return subscription;
     } catch(e) {
       this.logger.error('Cant be subscribed', e)
