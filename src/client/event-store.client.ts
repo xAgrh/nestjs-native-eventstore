@@ -1,9 +1,11 @@
 import {
+  ANY,
   AppendResult,
   END,
   EventStoreDBClient,
   EventType,
   jsonEvent,
+  NO_STREAM,
   PersistentSubscriptionToStream,
   PersistentSubscriptionToStreamSettings,
   ReadRevision,
@@ -152,6 +154,10 @@ export class EventStoreClient {
   }
 
   async deleteStream(streamName, group) {
-    return await this.client.deletePersistentSubscriptionToStream(streamName, group);
+    try {
+      return await this.client.deleteStream(streamName, { expectedRevision: NO_STREAM });
+    } catch (error) {
+      this.logger.log(error);
+    }
   }
 }
