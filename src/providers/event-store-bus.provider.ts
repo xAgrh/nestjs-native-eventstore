@@ -1,4 +1,3 @@
-
 import {
   CommandBus,
   EventHandlerType,
@@ -48,12 +47,34 @@ export class EventStoreBusProvider extends ObservableBus<IEvent> implements OnMo
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
-  publish<T extends IEvent>(event: T, stream: string) {
-    this._publisher.publish(event, stream);
+  publish<T extends IEvent>(event: T, stream?: string) {
+    if (!event) {
+      return;
+    }
+    
+    try {
+      // Ensure we have a valid stream name
+      const streamName = stream || this.getEventName(event);
+      this._publisher.publish(event, streamName);
+    } catch (error) {
+      this.logger.error(`Failed to publish event: ${this.getEventName(event)}`, error);
+      throw error;
+    }
   }
 
   publishAll(events: IEvent[]) {
-    (events || []).forEach((ev) => this._publisher.publish(ev));
+    if (!Array.isArray(events) || events.length === 0) {
+      return;
+    }
+
+    events.forEach((event) => {
+      try {
+        this.publish(event);
+      } catch (error) {
+        this.logger.error(`Failed to publish event in batch: ${this.getEventName(event)}`, error);
+        throw error;
+      }
+    });
   }
 
   bind(handler: IEventHandler<IEvent>, name: string) {

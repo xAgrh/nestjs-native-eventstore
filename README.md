@@ -98,9 +98,8 @@ This following is a way to use the command handlers that push to the custom even
 ```typescript
 import { ICommandHandler, CommandHandler } from '@nestjs/cqrs';
 import { SomeCommand } from '../impl/some.command';
-import { EventStorePublisher } from 'nestjs-native-eventstore'; //this is necessary as it overrides the default publisher
 import { ObjectAggregate } from '../../models/object.aggregate';
-
+import { EventStorePublisher } from '../../es';
 @CommandHandler(SomeCommand)
 export class SomeCommandHandler
   implements ICommandHandler<SomeCommand> {
